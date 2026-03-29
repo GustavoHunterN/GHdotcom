@@ -1,81 +1,93 @@
 # GHdotcom
 
-Proyecto personal para mostrar y mejorar habilidades: herramientas en Python que sincronizan la información de tus repositorios de GitHub con una base de datos MySQL (APIs, modelado dinámico de tablas y persistencia).
+Personal project: Python tools that sync GitHub repository metadata into MySQL using the [GitHub REST API](https://docs.github.com/en/rest), dynamic table creation, and inserts into a `repos` table.
 
-## Requisitos
+**Repository:** [github.com/GustavoHunterN/GHdotcom](https://github.com/GustavoHunterN/GHdotcom)
+
+## Features
+
+- **`GitHubClient`** (`API_GitHub/GithubClient.py`) — Single place for GitHub API calls: `get_repos()`, `get_repo_names()`, and `get_repo_by_name(name)` (uses `GET /repos/{owner}/{repo}`). Extend this class when you add more endpoints.
+- **`Repo`** (`API_GitHub/repo.py`) — Maps API fields to attributes, `CREATE TABLE IF NOT EXISTS repos`, `repo_in_db()`, and `save()`.
+- **`DatabaseConnector`** (`DB/connector.py`) — MySQL connection plus `get_repos()` returning repository names already stored.
+- **`Logic`** (`Logic/Logic.py`) — Compares GitHub with the database and inserts missing repositories.
+
+## Requirements
 
 - Python 3.10+
-- MySQL con una base llamada `GH` (o el nombre que definas en variables de entorno)
-- [Token de acceso personal de GitHub](https://github.com/settings/tokens) con permisos que permitan listar tus repositorios
+- MySQL with a database you can use for the `repos` table (for example `GH` or any name set in `.env`)
+- A [GitHub personal access token](https://github.com/settings/tokens) with scopes that allow listing your repositories
 
-## Instalación
+## Installation
 
 ```bash
+git clone https://github.com/GustavoHunterN/GHdotcom.git
+cd GHdotcom
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Copia `.env.example` a `.env` y configura las variables (ver sección **Configuración**).
+Copy `.env.example` to `.env` and set variables (see **Configuration**).
 
-Crea la base de datos en MySQL si aún no existe:
+Create the database in MySQL if it does not exist:
 
 ```sql
 CREATE DATABASE GH CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-## Configuración
+## Configuration
 
-| Variable        | Descripción                          | Por defecto   |
-|----------------|--------------------------------------|---------------|
-| `GITHUB_TOKEN` | Token PAT de GitHub                  | _(obligatorio)_ |
-| `DB_HOST`      | Host de MySQL                        | `localhost`   |
-| `DB_USER`      | Usuario MySQL                        | `root`        |
-| `DB_PSSWD`     | Contraseña MySQL                     | _(obligatorio)_ |
-| `DB_NAME`      | Nombre de la base de datos           | `GH`          |
+| Variable         | Description              | Default     |
+|------------------|--------------------------|-------------|
+| `GITHUB_TOKEN`   | GitHub PAT               | _(required)_ |
+| `DB_HOST`        | MySQL host               | _(from `.env`)_ |
+| `DB_USER`        | MySQL user               | _(from `.env`)_ |
+| `DB_PASSWORD`    | MySQL password           | _(required)_ |
+| `DB_NAME`        | Database name            | e.g. `GH`   |
 
-## Uso
+Set `GitHubClient.user` to your GitHub username or organization so API paths resolve correctly.
 
-Desde la raíz del proyecto:
+## Usage
+
+From the **project root**:
 
 ```bash
-python -m GH.GH
+python -m Logic.Logic
 ```
 
-El script:
+This resolves which repository names exist on GitHub but not in MySQL, fetches each full repository object from the API, and inserts rows when not already present.
 
-1. Valida el token contra la API de GitHub (`GET /user`).
-2. Obtiene la lista de repositorios (`GET /user/repos`).
-3. Por cada repositorio, crea (si no existe) la tabla `repo` con columnas según los campos del JSON de la API e inserta los registros con `INSERT IGNORE`.
-
-## Estructura del proyecto
+## Project layout
 
 ```
 GHdotcom/
+├── API_GitHub/
+│   ├── GithubClient.py   # GitHub API client
+│   └── repo.py           # Repo model and persistence
 ├── DB/
-│   └── Conector.py      # Conexión MySQL y utilidades CRUD básicas
-├── GH/
-│   └── GH.py            # Punto de entrada: GitHub API → MySQL
-├── modules/
-│   └── repo.py          # Modelo `Repo` y persistencia dinámica
-├── control/
-│   └── classes.py       # Validación de objetos
+│   └── connector.py      # MySQL connector
+├── Logic/
+│   └── Logic.py          # Entry: diff GitHub vs DB, insert missing
 ├── requirements.txt
 ├── .env.example
 ├── CHANGELOG.md
+├── SECURITY.md
 └── README.md
 ```
 
-## Seguridad
+## Architecture notes
 
-- **No subas** el archivo `.env` ni tokens; está excluido en `.gitignore`.
-- Si un token o contraseña llegó a exponerse en un chat, commit o captura, **revócalo o cámbialo** de inmediato en GitHub y en MySQL.
-- Más detalle en [SECURITY.md](SECURITY.md).
+- **Table `repos`** — Columns follow the first persisted object: `id` is `VARCHAR(255) PRIMARY KEY`, other fields are `TEXT`. Complex values are serialized for insert.
+- **Extending the client** — Add methods on `GitHubClient` and keep `BASE_URL` and headers in one place.
+
+## Security
+
+Do not commit `.env` or tokens. See [SECURITY.md](SECURITY.md).
 
 ## Changelog
 
-Historial de versiones en [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](CHANGELOG.md).
 
-## Licencia
+## License
 
-Uso personal / aprendizaje. Ajusta la licencia si publicas el proyecto de forma abierta.
+Personal / learning use. Add an explicit license if you publish the project more broadly.

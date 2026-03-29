@@ -1,14 +1,14 @@
-# Política de seguridad
+# Security policy
 
-## Credenciales
+## Credentials
 
-Este proyecto usa variables de entorno para tokens y contraseñas. El archivo `.env` **no debe** versionarse ni compartirse.
+This project uses environment variables for tokens and passwords. The `.env` file **must not** be committed or shared.
 
-## Si se filtró un secreto
+## If a secret was exposed
 
-1. **GitHub:** revoca el token en [Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens) y crea uno nuevo si lo necesitas.
-2. **MySQL:** cambia la contraseña del usuario afectado y actualiza tu `.env` local.
+1. **GitHub:** Revoke the token under [Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens) and create a new one if needed.
+2. **MySQL:** Change the affected user password and update your local `.env`.
 
-## Reportar vulnerabilidades
+## Reporting issues
 
-Si encuentras un problema de seguridad en este repositorio, abre un issue privado o contacta al mantenedor por los canales que prefieras. No publiques detalles explotables en issues públicos hasta tener un acuerdo sobre divulgación.
+If you find a security problem in this repository, contact the maintainer privately or use GitHub’s reporting options. Do not post exploitable details in public issues before coordinated disclosure.
