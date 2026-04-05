@@ -1,68 +1,42 @@
-from DB.connector import DatabaseConnector
 import json
+from typing import Any
+
+
 class Repo:
-    def __init__(self, **data):
-        for key, value in data.items():
-            setattr(self, key, str(value))
+    """Domain model for a GitHub repository payload (no I/O)."""
 
-    def __repr__(self):
-        return (self.name)
+    __slots__ = ("_data",)
 
-    def __str__(self):
-        return (self.name)
+    def __init__(self, **data: Any) -> None:
+        self._data = dict(data)
 
-    def create_table(self):
-        db = DatabaseConnector()
-        cursor = db.cursor
+    @classmethod
+    def from_github(cls, payload: dict) -> "Repo":
+        """Build a model from a GitHub API repository object."""
+        return cls(**payload)
 
-        columns = []
-        for key in self.__dict__.keys():
-            if key == "id":
-                columns.append(f"{key} VARCHAR(255) PRIMARY KEY")
+    def __getattr__(self, name: str) -> Any:
+        if name in self._data:
+            return self._data[name]
+        raise AttributeError(name)
+
+    def __repr__(self) -> str:
+        return str(self._data.get("name", "Repo"))
+
+    def __str__(self) -> str:
+        return str(self._data.get("name", ""))
+
+    def as_db_row(self) -> dict[str, Any]:
+        """Flat dict for persistence: complex values JSON-encoded, scalars as strings or None."""
+        row: dict[str, Any] = {}
+        for key, value in self._data.items():
+            if isinstance(value, (dict, list)):
+                row[key] = json.dumps(value)
+            elif value is None:
+                row[key] = None
             else:
-                columns.append(f"{key} TEXT")
+                row[key] = str(value)
+        return row
 
-        columns_sql = ",\n            ".join(columns)
-
-        query = f"""
-        CREATE TABLE IF NOT EXISTS repos (
-            {columns_sql}
-        )
-        """
-
-        cursor.execute(query)
-        db.connection.commit()
-        db.close()
-
-
-    def repo_in_db(self):
-        db = DatabaseConnector()
-        repo_names = db.get_repos()
-        return self.name in repo_names
-
-    def save(self):
-
-        db = DatabaseConnector()
-        cursor = db.cursor
-
-        # obtener atributos del objeto
-        data = self.__dict__
-
-        self.create_table()
-
-        columns = ", ".join(data.keys())
-        placeholders = ", ".join(["%s"] * len(data))
-        values = tuple(
-            json.dumps(i) if isinstance(i, (dict, list)) else str(i)
-            for i in data.values()
-        )
-
-        query = f"INSERT INTO repos ({columns}) VALUES ({placeholders})"
-
-        cursor.execute(query, values)
-        db.connection.commit()
-        print(f'repo {self.id} saved in db')
-        db.close()
-
-
-
+    def keys(self) -> list[str]:
+        return list(self._data.keys())

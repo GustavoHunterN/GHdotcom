@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GHdotcom — Showcase</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="showcase-page">
+  {% if db_error %}
+    <main class="showcase-error">
+      <h1>GHdotcom</h1>
+      <p class="showcase-error__msg" role="alert">{{ db_error }}</p>
+    </main>
+  {% else %}
+
+  <header class="showcase-hero" id="top">
+    <div class="showcase-hero__inner">
+      <p class="showcase-hero__eyebrow">GitHub · sólo lectura local</p>
+      <h1 class="showcase-hero__title">GHdotcom</h1>
+      <p class="showcase-hero__lead">
+        Repositorios ya sincronizados en tu base de datos. Cada pantalla es un proyecto; esta vista no consulta la API de GitHub al cargar.
+      </p>
+      {% if repos|length > 0 %}
+        <p class="showcase-hero__hint" aria-hidden="true">Scroll para recorrer</p>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if repos|length == 0 %}
+    <section class="repo-slide repo-slide--empty" aria-label="Sin repositorios">
+      <div class="repo-slide__inner">
+        <p class="empty-copy">Aún no hay repositorios en la base de datos. Ejecutá <code>python -m sync</code> y recargá la página.</p>
+      </div>
+    </section>
+  {% endif %}
+
+  {% for repo in repos %}
+  <section
+    class="repo-slide"
+    id="repo-{{ loop.index }}"
+    data-repo-slide
+    aria-label="Repositorio {{ repo.name or 'sin nombre' }}"
+  >
+    <div class="repo-slide__inner">
+      <div class="repo-slide__grid">
+        <div class="repo-slide__copy">
+          <p class="repo-slide__index">{{ loop.index }} / {{ repos|length }}</p>
+          <h2 class="repo-slide__name">
+            {% if repo.url %}
+              <a href="{{ repo.url }}" rel="noopener noreferrer" target="_blank">{{ repo.name or "Sin nombre" }}</a>
+            {% else %}
+              {{ repo.name or "Sin nombre" }}
+            {% endif %}
+          </h2>
+          {% if repo.full_name %}
+            <p class="repo-slide__full-name">{{ repo.full_name }}</p>
+          {% endif %}
+          <p class="repo-slide__description">{{ repo.description or "Sin descripción" }}</p>
+          <div class="repo-slide__badges">
+            <span class="badge">{{ repo.language or "No especificado" }}</span>
+            <span class="badge badge--stars">{{ repo.stars|default(0) }} ★</span>
+            {% if repo.homepage %}
+              <a class="badge badge--link" href="{{ repo.homepage }}" rel="noopener noreferrer" target="_blank">Sitio / demo</a>
+            {% endif %}
+          </div>
+          <div class="repo-slide__actions">
+            {% if repo.url %}
+              <a class="btn btn--primary" href="{{ repo.url }}" rel="noopener noreferrer" target="_blank">Ver en GitHub</a>
+            {% else %}
+              <span class="btn btn--ghost" aria-disabled="true">Sin enlace</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="repo-slide__preview">
+          <div class="mockup">
+            <div class="mockup__chrome">
+              <div class="mockup__dots" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </div>
+              <span class="mockup__url">{{ (repo.full_name or repo.name or "repository")|e }} · preview</span>
+            </div>
+            <div class="mockup__viewport">
+              {% if repo.preview_image %}
+                <img class="mockup__img" src="{{ repo.preview_image }}" alt="" loading="lazy">
+              {% else %}
+                <div class="mockup__fallback">
+                  <div class="mockup__glow"></div>
+                  <div class="mockup__pattern" aria-hidden="true"></div>
+                  <p class="mockup__label">{{ repo.name or "repo" }}</p>
+                  <div class="mockup__fake-lines" aria-hidden="true">
+                    <span></span><span></span><span></span>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endfor %}
+
+  <footer class="showcase-footer">
+    <p>GHdotcom — showcase de solo lectura</p>
+  </footer>
+
+  {% endif %}
+
+  <script src="{{ url_for('static', filename='home.js') }}" defer></script>
+</body>
+</html>
